@@ -1,4 +1,4 @@
-from game_basics.Basics import *
+from dtos.BasicDto import *
 
 
 def create_player_id_map(players):
@@ -6,6 +6,13 @@ def create_player_id_map(players):
     for player in players:
         player_id_map[player.id] = player
     return player_id_map
+
+
+def create_player_name_map(players):
+    player_name_map = {}
+    for player in players:
+        player_name_map[player.name] = player
+    return player_name_map
 
 
 # finds the teammate of the given player

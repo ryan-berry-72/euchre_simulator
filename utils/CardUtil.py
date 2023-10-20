@@ -1,5 +1,8 @@
-from game_basics.Basics import *
-from game_basics.GameConstants import *
+from typing import List
+
+from constants.GameConstants import trump_suit_hierarchy, play_suit_hierarchy, trump_and_play_suit_hierarchy, \
+    euchre_deck_map, suit_name_map
+from dtos.BasicDto import CardValueEnum, Card, Suit
 
 
 # determines if the given card falls in the trump suit (accounts for jacks)
@@ -43,6 +46,17 @@ def create_suit_card_map(cards, trump_suit):
     return suit_card_map
 
 
-# returns the shorthand name for the given card
-def get_card_name(card):
-    return str(card.value.name) + ' of ' + str(card.suit.name.name)
+def get_card_by_name(card_name: str) -> Card:
+    if card_name not in euchre_deck_map:
+        raise Exception(f'Invalid card name: {card_name}')
+    return euchre_deck_map[card_name]
+
+
+def get_cards_by_names(card_names: List[str]) -> List[Card]:
+    return [get_card_by_name(card_name) for card_name in card_names]
+
+
+def get_suit_by_name(suit_name) -> Suit:
+    if suit_name not in suit_name_map:
+        raise Exception(f'Invalid suit name: {suit_name}')
+    return suit_name_map[suit_name]

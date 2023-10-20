@@ -1,8 +1,5 @@
 import numpy as np
-import random
-from game_basics.Basics import *
-from game_basics.BasicsUtil import *
-from game_basics.GameService import *
+from services.GameService import *
 
 player1 = Player('Ryan', SuitColorEnum.BLACK, Hand((), []), 1)
 player2 = Player('Craig', SuitColorEnum.RED, Hand((), []), 2)

@@ -1,4 +1,4 @@
-from game_basics.Basics import *
+from dtos.BasicDto import *
 
 
 @dataclass

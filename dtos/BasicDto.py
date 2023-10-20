@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, auto
 from typing import List, Tuple
 
 
@@ -14,10 +14,13 @@ class Card:
     suit: Suit
     value: "CardValueEnum"
 
+    def __str__(self):
+        return create_card_name(self.value, self.suit.name)
+
 
 @dataclass
 class Hand:
-    starting_cards: Tuple[Card]
+    starting_cards: List[Card]
     remaining_cards: List[Card]
 
 
@@ -44,6 +47,9 @@ class Call:
     player_id: int = 0
     is_complete: bool = False
 
+    def __str__(self):
+        return f'Player{self.player_id} called {self.suit.name.name.lower()}'
+
 
 @dataclass
 class Trick:
@@ -62,6 +68,7 @@ class Round:
     player_id_map: dict  # key=player_id, value=player
     tricks: List[Trick]
     tricks_won_map: dict  # key=team, value=quantity_tricks_won
+    points_won_map: dict  # key=team, value=points_won
     flipped_card: Card
     call: Call
     id: int = 0
@@ -73,6 +80,7 @@ class Round:
 class Game:
     players: Tuple[Player]
     player_id_map: dict  # key=player_id_map, value=player
+    dealer_start_id: int
     rounds: List[Round]
     team_score_map: dict  # key=team, value=score
     winning_team: "SuitColorEnum"
@@ -80,49 +88,40 @@ class Game:
     is_complete: bool = False
 
 
-@dataclass
-class Simulation:
-    players: Tuple[Player]
-    games: List[Game]
-    output_directory: str
-    file_postfix: str
-    id: int = 0
-    quantity: int = 0  # number of games to be simulated
-    record_batch_size: int = 100  # only used if record_games=True
-    is_complete: bool = False
-    record_games: bool = False  # indicates whether games will be stored and recorded
-
-
 class CardValueEnum(Enum):
-    ACE = 1,
-    TWO = 2,
-    THREE = 3,
-    FOUR = 4,
-    FIVE = 5,
-    SIX = 6,
-    SEVEN = 7,
-    EIGHT = 8,
-    NINE = 9,
-    TEN = 10,
-    JACK = 11,
-    QUEEN = 12,
-    KING = 13
+    NINE = auto()
+    TEN = auto()
+    JACK = auto()
+    QUEEN = auto()
+    KING = auto()
+    ACE = auto()
 
 
 class SuitNameEnum(Enum):
-    SPADES = "Spades",
-    CLUBS = "Clubs",
-    HEARTS = "Hearts",
-    DIAMONDS = "Diamonds"
+    SPADES = auto()
+    CLUBS = auto()
+    HEARTS = auto()
+    DIAMONDS = auto()
 
 
 class SuitColorEnum(Enum):
-    BLACK = "Black",
-    RED = "Red"
+    BLACK = auto()
+    RED = auto()
 
 
 class CallTypeEnum(Enum):
-    REGULAR_P1 = "Regular Phase 1",
-    REGULAR_P2 = "Regular Phase 2",
-    LONER_P1 = "Loner Phase 1",
-    LONER_P2 = "Loner Phase 2"
+    REGULAR_P1 = "regular_phase_1"
+    REGULAR_P2 = "regular_phase_2"
+    LONER_P1 = "loner_phase_1"
+    LONER_P2 = "loner_phase_2"
+
+    @staticmethod
+    def create(input_string: str):
+        try:
+            return CallTypeEnum[input_string]
+        except KeyError:
+            raise Exception(f"'{input_string}' is not a valid enum value.")
+
+
+def create_card_name(value: CardValueEnum, name: SuitNameEnum) -> str:
+    return f'{value.name.lower()}_of_{name.name.lower()}'

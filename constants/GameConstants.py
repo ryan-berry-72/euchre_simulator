@@ -1,4 +1,8 @@
-from game_basics.Basics import *
+from dtos.BasicDto import Suit, SuitNameEnum, SuitColorEnum, Card, CardValueEnum, create_card_name
+
+
+PLAYER_COUNT = 4
+HAND_MAX_CARD_COUNT = 5
 
 
 spades = Suit(SuitNameEnum.SPADES, SuitColorEnum.BLACK)
@@ -7,8 +11,17 @@ hearts = Suit(SuitNameEnum.HEARTS, SuitColorEnum.RED)
 diamonds = Suit(SuitNameEnum.DIAMONDS, SuitColorEnum.RED)
 
 suits = (spades, clubs, hearts, diamonds)
+suit_map = {
+    0: spades,
+    1: clubs,
+    2: hearts,
+    3: diamonds
+}
+suit_name_map = {}
+for suit in suits:
+    suit_name_map[suit.name.name.lower()] = suit
 
-euchre_deck = (
+euchre_deck = [
     Card(spades, CardValueEnum.NINE),
     Card(spades, CardValueEnum.TEN),
     Card(spades, CardValueEnum.JACK),
@@ -33,14 +46,41 @@ euchre_deck = (
     Card(diamonds, CardValueEnum.QUEEN),
     Card(diamonds, CardValueEnum.KING),
     Card(diamonds, CardValueEnum.ACE)
-)
+]
 
-suit_map = {
-    0: spades,
-    1: clubs,
-    2: hearts,
-    3: diamonds
-}
+euchre_deck_map = {}
+for card in euchre_deck:
+    euchre_deck_map[str(card)] = card
+
+
+nine_of_spades = create_card_name(CardValueEnum.NINE, SuitNameEnum.SPADES)
+ten_of_spades = create_card_name(CardValueEnum.TEN, SuitNameEnum.SPADES)
+jack_of_spades = create_card_name(CardValueEnum.JACK, SuitNameEnum.SPADES)
+queen_of_spades = create_card_name(CardValueEnum.QUEEN, SuitNameEnum.SPADES)
+king_of_spades = create_card_name(CardValueEnum.KING, SuitNameEnum.SPADES)
+ace_of_spades = create_card_name(CardValueEnum.ACE, SuitNameEnum.SPADES)
+
+nine_of_clubs = create_card_name(CardValueEnum.NINE, SuitNameEnum.CLUBS)
+ten_of_clubs = create_card_name(CardValueEnum.TEN, SuitNameEnum.CLUBS)
+jack_of_clubs = create_card_name(CardValueEnum.JACK, SuitNameEnum.CLUBS)
+queen_of_clubs = create_card_name(CardValueEnum.QUEEN, SuitNameEnum.CLUBS)
+king_of_clubs = create_card_name(CardValueEnum.KING, SuitNameEnum.CLUBS)
+ace_of_clubs = create_card_name(CardValueEnum.ACE, SuitNameEnum.CLUBS)
+
+nine_of_hearts = create_card_name(CardValueEnum.NINE, SuitNameEnum.HEARTS)
+ten_of_hearts = create_card_name(CardValueEnum.TEN, SuitNameEnum.HEARTS)
+jack_of_hearts = create_card_name(CardValueEnum.JACK, SuitNameEnum.HEARTS)
+queen_of_hearts = create_card_name(CardValueEnum.QUEEN, SuitNameEnum.HEARTS)
+king_of_hearts = create_card_name(CardValueEnum.KING, SuitNameEnum.HEARTS)
+ace_of_hearts = create_card_name(CardValueEnum.ACE, SuitNameEnum.HEARTS)
+
+nine_of_diamonds = create_card_name(CardValueEnum.NINE, SuitNameEnum.DIAMONDS)
+ten_of_diamonds = create_card_name(CardValueEnum.TEN, SuitNameEnum.DIAMONDS)
+jack_of_diamonds = create_card_name(CardValueEnum.JACK, SuitNameEnum.DIAMONDS)
+queen_of_diamonds = create_card_name(CardValueEnum.QUEEN, SuitNameEnum.DIAMONDS)
+king_of_diamonds = create_card_name(CardValueEnum.KING, SuitNameEnum.DIAMONDS)
+ace_of_diamonds = create_card_name(CardValueEnum.ACE, SuitNameEnum.DIAMONDS)
+
 
 trump_suit_hierarchy = {
     spades: {
