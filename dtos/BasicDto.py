@@ -23,13 +23,20 @@ class Hand:
     starting_cards: List[Card]
     remaining_cards: List[Card]
 
+    def __str__(self):
+        return (f"(starting cards: {[str(card) for card in self.starting_cards]}, remaining cards: "
+                f"{[str(card) for card in self.remaining_cards]})")
+
 
 @dataclass
 class Player:
     name: str
     team: "SuitColorEnum"
     hand: Hand
-    id: int = 0  # also indicates position (i.e. id 2 is to the left of 1 and id 3 is to the left of 2)
+    id: int = 0  # also indicates position (i.e. going clockwise around a table 1->2->3->4)
+
+    def __str__(self):
+        return f"(name: {self.name}, team: {self.team.name}, hand: {self.hand}, id: {self.id})"
 
 
 @dataclass
@@ -48,7 +55,7 @@ class Call:
     is_complete: bool = False
 
     def __str__(self):
-        return f'Player{self.player_id} called {self.suit.name.name.lower()}'
+        return f"(player: {self.player_id}, suit: {self.suit.name.name.lower()}, type: {self.type.name})"
 
 
 @dataclass

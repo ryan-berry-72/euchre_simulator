@@ -1,7 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+
 from typing import List, Dict
 
-from constants.GameConstants import PLAYER_COUNT
+from matplotlib import pyplot as plt
+
+from constants.GameConstants import PLAYER_COUNT, HAND_MAX_CARD_COUNT
 from dtos.BasicDto import Player, Call, CallTypeEnum, SuitColorEnum
 from dtos.SimulationDto import RoundSimulationRequest, RoundSimulation, RoundSimulationResponse
 from services.CallService import CallService
@@ -15,7 +19,9 @@ from services.simulation.RoundSimulationService import RoundSimulationService
 from utils.BasicsUtil import create_player_name_map
 from utils.CardUtil import get_card_by_name, get_cards_by_names, get_suit_by_name
 
+
 app = Flask(__name__)
+CORS(app)
 player_service = PlayerService()
 round_simulation_service = RoundSimulationService(
     dealing_service=DealingService(),
@@ -51,22 +57,25 @@ def simulate_round():
 
         print(simulation_response)
 
+        pretty_sim_count = f'{simulation.quantity:,}'
+        plot_dict(simulation_response.avg_points_map, 'Team', 'Average Points Won', f'Simulated {pretty_sim_count} Rounds', 4)
+
         return jsonify(simulation_response), 200
     except Exception as e:
         print(e)
-        return jsonify(e), 400
+        return jsonify(error=str(e)), 500
 
 
 def to_simulation_request(json_data: Dict) -> RoundSimulationRequest:
     return RoundSimulationRequest(
-        player_names=json_data['player_names'],
-        player_hands=json_data['player_hands'],
-        dealer_name=json_data['dealer_name'],
-        flipped_card=json_data['flipped_card'],
-        caller_name=json_data['caller_name'],
-        call_suit=json_data['call_suit'],
-        call_type=json_data['call_type'],
-        quantity=json_data['quantity']
+        player_names=json_data.get('player_names', []),
+        player_hands=json_data.get('player_hands', []),
+        dealer_name=json_data.get('dealer_name', ''),
+        flipped_card=json_data.get('flipped_card', ''),
+        caller_name=json_data.get('caller_name', ''),
+        call_suit=json_data.get('call_suit', ''),
+        call_type=json_data.get('call_type', ''),
+        quantity=json_data.get('quantity', '')
     )
 
 
@@ -135,6 +144,16 @@ def get_players_from_sim(simulation_request: RoundSimulationRequest) -> List[Pla
             players[i].name = simulation_request.player_names[i]
             players[i].hand.remaining_cards = get_cards_by_names(simulation_request.player_hands[i])
 
+            # validate cards
+            if len(players[i].hand.remaining_cards) > HAND_MAX_CARD_COUNT:
+                raise Exception(f"Player: {players[i]} has too many cards")
+            card_set = set()
+            for card in players[i].hand.remaining_cards:
+                card_set_length = len(card_set)
+                card_set.add(card)
+                if len(card_set) == card_set_length:
+                    raise Exception(f"Duplicate card: {card} detected for player: {players[i]}")
+
     return players
 
 
@@ -150,6 +169,32 @@ def get_id_or_default(player_name: str, player_name_map: Dict[str, Player], defa
     if player_name is None or player_name not in player_name_map:
         return default_value
     return player_name_map[player_name].id
+
+
+def plot_dict(dict_to_plot, xlabel, ylabel, title, ylim):
+    # Extract keys and values
+    xvals = [k for k in dict_to_plot.keys()]
+    # xvals = list(map.keys())
+    yvals = [round(v, 2) for v in dict_to_plot.values()]
+    # yvals = list(map.values())
+
+    # Create a bar chart
+    plt.bar(xvals, yvals)
+
+    # Add labels and a title
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+
+    # Set y-axis limits to go up to 5
+    plt.ylim(0, ylim)
+
+    # Add value annotations on top of the bars
+    for i, v in enumerate(yvals):
+        plt.text(i, v, str(v), ha='center', va='bottom')
+
+    # Show the chart
+    plt.show()
 
 
 if __name__ == '__main__':

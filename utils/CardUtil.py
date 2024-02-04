@@ -47,6 +47,8 @@ def create_suit_card_map(cards, trump_suit):
 
 
 def get_card_by_name(card_name: str) -> Card:
+    if card_name is None or not card_name:
+        return None
     if card_name not in euchre_deck_map:
         raise Exception(f'Invalid card name: {card_name}')
     return euchre_deck_map[card_name]
