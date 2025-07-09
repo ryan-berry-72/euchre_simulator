@@ -122,6 +122,9 @@ class CallTypeEnum(Enum):
     LONER_P1 = "loner_phase_1"
     LONER_P2 = "loner_phase_2"
 
+    def is_loner(self) -> bool:
+        return self in {CallTypeEnum.LONER_P1, CallTypeEnum.LONER_P2}
+
     @staticmethod
     def create(input_string: str):
         try:

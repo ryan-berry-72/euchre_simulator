@@ -57,8 +57,8 @@ def simulate_round():
 
         print(simulation_response)
 
-        pretty_sim_count = f'{simulation.quantity:,}'
-        plot_dict(simulation_response.avg_points_map, 'Team', 'Average Points Won', f'Simulated {pretty_sim_count} Rounds', 4)
+        # pretty_sim_count = f'{simulation.quantity:,}'
+        # plot_dict(simulation_response.avg_points_map, 'Team', 'Average Points Won', f'Simulated {pretty_sim_count} Rounds', 4)
 
         return jsonify(simulation_response), 200
     except Exception as e:
@@ -95,8 +95,9 @@ def transform_simulation_request_to_simulation(simulation_request: RoundSimulati
 
 def transform_simulation_to_response(simulation: RoundSimulation) -> RoundSimulationResponse:
     rounds = simulation.rounds
-    team_name_1 = simulation.players[0].name + ' & ' + simulation.players[2].name
-    team_name_2 = simulation.players[1].name + ' & ' + simulation.players[3].name
+    team_names = get_team_names(simulation.players)
+    team_name_1 = team_names[0]
+    team_name_2 = team_names[1]
 
     total_points_map = {team_name_1: 0, team_name_2: 0}
     total_wins_map = {team_name_1: 0, team_name_2: 0}
@@ -128,6 +129,19 @@ def transform_simulation_to_response(simulation: RoundSimulation) -> RoundSimula
         avg_points_map=avg_points_map,
         avg_tricks_map=avg_tricks_map
     )
+
+
+def get_team_names(players: List[Player]) -> (str, str):
+    team_1 = []
+    team_2 = []
+    for player in players:
+        if player.team == SuitColorEnum.BLACK:
+            team_1.append(player.name)
+        else:
+            team_2.append(player.name)
+    team_name_1 = ' & '.join(team_1)
+    team_name_2 = ' & '.join(team_2)
+    return team_name_1, team_name_2
 
 
 def get_players_from_sim(simulation_request: RoundSimulationRequest) -> List[Player]:
@@ -197,5 +211,5 @@ def plot_dict(dict_to_plot, xlabel, ylabel, title, ylim):
     plt.show()
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# if __name__ == '__main__':
+#     app.run(debug=True, host='0.0.0.0', port=8080)

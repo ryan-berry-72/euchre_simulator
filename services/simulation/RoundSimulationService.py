@@ -12,7 +12,7 @@ from services.PlayerService import PlayerService
 from services.RoundService import RoundService
 from services.ShuffleService import ShuffleService
 from services.TrickService import TrickService
-from utils.BasicsUtil import create_player_id_map
+from utils.BasicsUtil import create_player_id_map, get_teammate
 import random
 import matplotlib.pyplot as plt
 
@@ -30,6 +30,14 @@ class RoundSimulationService:
     def simulate(self, round_simulation: RoundSimulation) -> RoundSimulation:
         if round_simulation.players is None:
             round_simulation.players = self.player_service.create_players(PLAYER_COUNT)
+
+        if round_simulation.call and round_simulation.call.type.is_loner():
+            players = round_simulation.players
+            call = round_simulation.call
+            caller = next((p for p in players if p.id == call.player_id), None)
+            # remove teammate from players
+            round_simulation.players.remove(get_teammate(round_simulation.players, caller))
+
         player_ids = [player.id for player in round_simulation.players]
 
         if round_simulation.call is None:

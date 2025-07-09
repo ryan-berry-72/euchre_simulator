@@ -1,0 +1,49 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+env/
+.venv/
+ENV/
+
+# Environment variable files
+.env
+*.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Docker files
+*.pid
+*.log
+
+# Pytest cache
+.pytest_cache/
+
+# VSCode project settings
+.vscode/
+
+# Build / distribution
+build/
+dist/
+*.egg-info/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Coverage reports
+htmlcov/
+coverage.xml
+*.cover
+
+# MyPy and other tooling caches
+.mypy_cache/
+.dmypy.json
+.pyre/
+
+# If you're using Flask debug log
+flask.log
