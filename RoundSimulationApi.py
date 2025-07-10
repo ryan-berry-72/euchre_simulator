@@ -39,6 +39,11 @@ round_simulation_service = RoundSimulationService(
 )
 
 
+@app.route("/")
+def health_check():
+    return "API is up", 200
+
+
 @app.route('/euchre/simulate/round', methods=['POST'])
 def simulate_round():
     try:
