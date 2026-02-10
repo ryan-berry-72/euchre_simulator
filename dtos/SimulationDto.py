@@ -31,6 +31,10 @@ class RoundSimulation:
     id: int = 0
     quantity: int = 1  # number of games to be simulated
     is_complete: bool = False
+    keep_rounds: bool = False
+    total_points: dict = None
+    total_wins: dict = None
+    total_tricks_by_player: dict = None
 
 
 @dataclass

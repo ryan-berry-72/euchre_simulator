@@ -82,6 +82,7 @@ def run_simulation(player_card_names, trump, caller_id, dealer_id, quantity,
         flipped_card=euchre_deck_map[flipped],
         quantity=quantity,
         dealer_id=dealer_id,
+        keep_rounds=True,
     ))
 
 

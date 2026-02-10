@@ -244,3 +244,9 @@ def populate_trump_and_play_suit_hierarchy():
 
 
 populate_trump_and_play_suit_hierarchy()
+
+# Flat 2-level lookup: flat_hierarchy[(trump_suit, play_suit)] -> {card: rank}
+flat_hierarchy = {}
+for _trump in suits:
+    for _play_suit in suits:
+        flat_hierarchy[(_trump, _play_suit)] = trump_and_play_suit_hierarchy[_trump][_play_suit]

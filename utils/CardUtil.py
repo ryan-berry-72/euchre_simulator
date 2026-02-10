@@ -1,7 +1,7 @@
 from typing import List
 
 from constants.GameConstants import trump_suit_hierarchy, play_suit_hierarchy, trump_and_play_suit_hierarchy, \
-    euchre_deck_map, suit_name_map
+    euchre_deck_map, suit_name_map, euchre_deck, suits
 from dtos.BasicDto import CardValueEnum, Card, Suit
 
 
@@ -27,12 +27,18 @@ def get_card_rank_by_trump_and_play_suit(card, trump_suit, play_suit):
     return trump_and_play_suit_hierarchy[trump_suit][play_suit][card]
 
 
+# precomputed effective suit cache: (card, trump_suit) -> effective suit
+_effective_suit_cache = {}
+for _card in euchre_deck:
+    for _trump in suits:
+        _effective_suit_cache[(_card, _trump)] = (
+            _trump if is_trump(_card, _trump) else _card.suit
+        )
+
+
 # gets the effective suit of the card according to trump (accounts for jacks)
 def get_effective_suit(card, trump_suit):
-    if is_trump(card, trump_suit):
-        return trump_suit
-    else:
-        return card.suit
+    return _effective_suit_cache[(card, trump_suit)]
 
 
 # key=suit, value=list_of_cards (accounts for jacks in trump suit color)

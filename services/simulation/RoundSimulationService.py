@@ -71,6 +71,12 @@ class RoundSimulationService:
         start_time = time.time()
         logger.info("Starting simulation of %s rounds", f'{total:,}')
 
+        # running totals
+        total_points = {SuitColorEnum.BLACK: 0, SuitColorEnum.RED: 0}
+        total_wins = {SuitColorEnum.BLACK: 0, SuitColorEnum.RED: 0}
+        total_tricks_by_player = {p.id: 0 for p in round_simulation.players}
+        keep_rounds = round_simulation.keep_rounds
+
         for round_id in range(1, total + 1):
             logger.debug('Playing round %s...', f'{round_id:,}')
 
@@ -81,7 +87,7 @@ class RoundSimulationService:
             # shuffle and deal remaining cards
             remaining_cards = list(remaining_cards_template)
             self.shuffle_service.shuffle_cards(remaining_cards)
-            self.dealing_service.deal_cards(round_simulation.players, remaining_cards)
+            self.dealing_service.deal_cards(round_simulation.players, remaining_cards, track_starting_cards=False)
 
             # get random player to call
             if random_caller:
@@ -100,7 +106,19 @@ class RoundSimulationService:
             )
 
             self.round_service.play_round(euchre_round, next_player_map)
-            round_simulation.rounds.append(euchre_round)
+
+            # update running totals
+            for team in (SuitColorEnum.BLACK, SuitColorEnum.RED):
+                pts = euchre_round.points_won_map[team]
+                total_points[team] += pts
+                if pts > 0:
+                    total_wins[team] += 1
+            for trick in euchre_round.tricks:
+                total_tricks_by_player[trick.winning_play.player.id] += 1
+
+            if keep_rounds:
+                round_simulation.rounds.append(euchre_round)
+
             logger.debug('Round %s result: %s', round_id,
                          '-'.join([str(v) for v in euchre_round.points_won_map.values()]))
 
@@ -112,12 +130,15 @@ class RoundSimulationService:
                             f'{total:,}', pct, rate, elapsed)
 
             for player in round_simulation.players:
-                player.hand.remaining_cards = list(player_cards_map[player.id])
-                player.hand.starting_cards.clear()
+                player.hand.remaining_cards[:] = player_cards_map[player.id]
 
         elapsed = time.time() - start_time
         logger.info("Simulation complete: %s rounds in %.1fs (%.0f rounds/sec)", f'{total:,}', elapsed,
                     total / elapsed if elapsed > 0 else 0)
+
+        round_simulation.total_points = total_points
+        round_simulation.total_wins = total_wins
+        round_simulation.total_tricks_by_player = total_tricks_by_player
 
         return round_simulation
 

@@ -14,12 +14,16 @@ class DealingService:
         return cls._instance
 
     @staticmethod
-    def deal_cards(players: List[Player], cards: List[Card]) -> List[Player]:
+    def deal_cards(players: List[Player], cards: List[Card], track_starting_cards: bool = True) -> List[Player]:
         card_index = 0
         for player in players:
             num = HAND_MAX_CARD_COUNT - len(player.hand.remaining_cards)
             dealt = cards[card_index:card_index + num]
-            player.hand.remaining_cards = dealt + player.hand.remaining_cards
-            player.hand.starting_cards = list(player.hand.remaining_cards)
+            if player.hand.remaining_cards:
+                player.hand.remaining_cards = dealt + player.hand.remaining_cards
+            else:
+                player.hand.remaining_cards = dealt
+            if track_starting_cards:
+                player.hand.starting_cards = list(player.hand.remaining_cards)
             card_index += num
         return players

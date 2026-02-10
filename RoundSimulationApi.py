@@ -107,35 +107,32 @@ def transform_simulation_request_to_simulation(simulation_request: RoundSimulati
 
 
 def transform_simulation_to_response(simulation: RoundSimulation) -> RoundSimulationResponse:
-    rounds = simulation.rounds
     team_names = get_team_names(simulation.players)
     team_name_1 = team_names[0]
     team_name_2 = team_names[1]
 
-    total_points_map = {team_name_1: 0, team_name_2: 0}
-    total_wins_map = {team_name_1: 0, team_name_2: 0}
-    total_tricks_map = {player.name: 0 for player in simulation.players}
+    # Build player id -> name map
+    player_name_by_id = {p.id: p.name for p in simulation.players}
 
-    for rd in rounds:
-        total_points_map[team_name_1] += rd.points_won_map[SuitColorEnum.BLACK]
-        total_points_map[team_name_2] += rd.points_won_map[SuitColorEnum.RED]
-        total_wins_map[team_name_1] += 0 if rd.points_won_map[SuitColorEnum.BLACK] == 0 else 1
-        total_wins_map[team_name_2] += 0 if rd.points_won_map[SuitColorEnum.RED] == 0 else 1
-        for tricks in rd.tricks:
-            total_tricks_map[tricks.winning_play.player.name] += 1
+    rounds_count = simulation.quantity
 
-    rounds_count = len(rounds)
+    # Use precomputed totals from the simulation
+    tp = simulation.total_points
+    tw = simulation.total_wins
+    tt = simulation.total_tricks_by_player
 
-    avg_points_map = {team_name_1: 0, team_name_2: 0}
-    win_prob_map = {team_name_1: 0, team_name_2: 0}
-    avg_tricks_map = {player.name: 0 for player in simulation.players}
-
-    for key in avg_points_map.keys():
-        avg_points_map[key] = round(total_points_map[key] / rounds_count, 2)
-        win_prob_map[key] = round(total_wins_map[key] / rounds_count, 2)
-
-    for key in avg_tricks_map.keys():
-        avg_tricks_map[key] = round(total_tricks_map[key] / rounds_count, 2)
+    avg_points_map = {
+        team_name_1: round(tp[SuitColorEnum.BLACK] / rounds_count, 2),
+        team_name_2: round(tp[SuitColorEnum.RED] / rounds_count, 2),
+    }
+    win_prob_map = {
+        team_name_1: round(tw[SuitColorEnum.BLACK] / rounds_count, 2),
+        team_name_2: round(tw[SuitColorEnum.RED] / rounds_count, 2),
+    }
+    avg_tricks_map = {
+        player_name_by_id[pid]: round(tricks / rounds_count, 2)
+        for pid, tricks in tt.items()
+    }
 
     return RoundSimulationResponse(
         win_prob_map=win_prob_map,

@@ -128,6 +128,7 @@ class TestLonerSimulation(unittest.TestCase):
             flipped_card=euchre_deck_map[flipped],
             quantity=quantity,
             dealer_id=dealer_id,
+            keep_rounds=True,
         ))
 
     def test_three_players_and_structural_integrity(self):

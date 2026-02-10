@@ -2,7 +2,7 @@ from typing import Dict
 
 from injector import inject
 
-from constants.GameConstants import trump_and_play_suit_hierarchy
+from constants.GameConstants import flat_hierarchy
 from dtos.BasicDto import Play, Trick, Player
 from utils.BasicsUtil import create_next_player_map
 from utils.CardUtil import get_effective_suit
@@ -53,9 +53,6 @@ class TrickService:
             trick.play_suit = get_effective_suit(play.card, trick.call.suit)
             trick.winning_play = play
         else:
-            best_play_rank = trump_and_play_suit_hierarchy[trick.call.suit][trick.play_suit][trick.winning_play.card]
-            current_play_rank = trump_and_play_suit_hierarchy[trick.call.suit][trick.play_suit][play.card]
-
-            # update winning play
-            if current_play_rank < best_play_rank:
+            rank_map = flat_hierarchy[(trick.call.suit, trick.play_suit)]
+            if rank_map[play.card] < rank_map[trick.winning_play.card]:
                 trick.winning_play = play

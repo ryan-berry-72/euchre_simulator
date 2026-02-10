@@ -3,13 +3,13 @@ from enum import Enum, auto
 from typing import List, Tuple
 
 
-@dataclass(eq=True, frozen=True)
+@dataclass(eq=True, frozen=True, slots=True)
 class Suit:
     name: "SuitNameEnum"
     color: "SuitColorEnum"
 
 
-@dataclass(eq=True, frozen=True)
+@dataclass(eq=True, frozen=True, slots=True)
 class Card:
     suit: Suit
     value: "CardValueEnum"
@@ -18,7 +18,7 @@ class Card:
         return create_card_name(self.value, self.suit.name)
 
 
-@dataclass
+@dataclass(slots=True)
 class Hand:
     starting_cards: List[Card]
     remaining_cards: List[Card]
@@ -39,7 +39,7 @@ class Player:
         return f"(name: {self.name}, team: {self.team.name}, hand: {self.hand}, id: {self.id})"
 
 
-@dataclass
+@dataclass(slots=True)
 class Play:
     card: Card
     player: Player
@@ -58,7 +58,7 @@ class Call:
         return f"(player: {self.player_id}, suit: {self.suit.name.name.lower()}, type: {self.type.name})"
 
 
-@dataclass
+@dataclass(slots=True)
 class Trick:
     plays: List[Play]
     winning_play: Play
@@ -69,7 +69,7 @@ class Trick:
     is_complete: bool = False
 
 
-@dataclass
+@dataclass(slots=True)
 class Round:
     players: List[Player]
     player_id_map: dict  # key=player_id, value=player
