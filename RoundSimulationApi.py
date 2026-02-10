@@ -216,5 +216,5 @@ def plot_dict(dict_to_plot, xlabel, ylabel, title, ylim):
     plt.show()
 
 
-# if __name__ == '__main__':
-#     app.run(debug=True, host='0.0.0.0', port=8080)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8080)

@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8080
 
 # Run the Flask app with Waitress
-CMD ["python", "-m", "waitress", "--host=0.0.0.0", "--port=8080", "--threads=4", "RoundSimulationApi:app"]
+CMD ["python", "-m", "waitress", "--host=0.0.0.0", "--port=8080", "--threads=16", "RoundSimulationApi:app"]
