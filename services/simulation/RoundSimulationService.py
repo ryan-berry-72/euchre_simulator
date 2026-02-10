@@ -14,7 +14,11 @@ from services.ShuffleService import ShuffleService
 from services.TrickService import TrickService
 from utils.BasicsUtil import create_player_id_map, get_teammate
 import random
+import logging
+import time
 import matplotlib.pyplot as plt
+
+logger = logging.getLogger(__name__)
 
 
 class RoundSimulationService:
@@ -56,8 +60,13 @@ class RoundSimulationService:
         for player in round_simulation.players:
             player_cards_map[player.id] = list(player.hand.remaining_cards)
 
-        for round_id in range(1, round_simulation.quantity+1):
-            print('Playing round ' + f'{round_id:,}' + '...')
+        total = round_simulation.quantity
+        log_interval = max(1, total // 10)
+        start_time = time.time()
+        logger.info("Starting simulation of %s rounds", f'{total:,}')
+
+        for round_id in range(1, total + 1):
+            logger.debug('Playing round %s...', f'{round_id:,}')
 
             # get random dealer
             if random_dealer:
@@ -86,11 +95,23 @@ class RoundSimulationService:
 
             self.round_service.play_round(euchre_round)
             round_simulation.rounds.append(euchre_round)
-            print('-'.join([str(v) for v in euchre_round.points_won_map.values()]))
+            logger.debug('Round %s result: %s', round_id,
+                         '-'.join([str(v) for v in euchre_round.points_won_map.values()]))
+
+            if round_id % log_interval == 0:
+                elapsed = time.time() - start_time
+                pct = round_id / total * 100
+                rate = round_id / elapsed if elapsed > 0 else 0
+                logger.info("Progress: %s/%s (%.0f%%) | %.0f rounds/sec | elapsed: %.1fs", f'{round_id:,}',
+                            f'{total:,}', pct, rate, elapsed)
 
             for player in round_simulation.players:
                 player.hand.remaining_cards = list(player_cards_map[player.id])
                 player.hand.starting_cards.clear()
+
+        elapsed = time.time() - start_time
+        logger.info("Simulation complete: %s rounds in %.1fs (%.0f rounds/sec)", f'{total:,}', elapsed,
+                    total / elapsed if elapsed > 0 else 0)
 
         return round_simulation
 
@@ -101,7 +122,6 @@ class RoundSimulationService:
             for card in player.hand.remaining_cards:
                 cards_in_use.append(card)
         return list(set(euchre_deck) - set(cards_in_use))
-
 
 # round_simulation_service = RoundSimulationService(
 #     dealing_service=DealingService(),

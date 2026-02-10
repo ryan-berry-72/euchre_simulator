@@ -1,11 +1,14 @@
 import collections
 import csv
+import logging
 from os.path import isfile
 
 from injector import inject
 
 from constants.GameConstants import trump_and_play_suit_hierarchy
 from utils.CardUtil import get_card_rank_by_trump_suit, create_card_name
+
+logger = logging.getLogger(__name__)
 
 
 class RecordService:
@@ -16,7 +19,7 @@ class RecordService:
 
     @staticmethod
     def record_games(games, csv_file):
-        print('recording', len(games), 'games to csv', csv_file)
+        logger.info('recording %s games to csv %s', len(games), csv_file)
 
         headers = [
             'game_id',
@@ -106,7 +109,7 @@ class RecordService:
 
         if card_rank_wins_map is None:
             card_rank_wins_map = {}
-        print('updating win probabilities')
+        logger.info('updating win probabilities')
 
         for game in games:
             for round_ in game.rounds:
@@ -167,7 +170,7 @@ class RecordService:
             for euchre_round in game.rounds:
                 for player in euchre_round.players:
                     if len(player.hand.starting_cards) != 5:
-                        print(euchre_round.call)
+                        logger.error('Invalid call: %s', euchre_round.call)
                         raise Exception(f'Player should have five cards {player}')
 
                     row = [

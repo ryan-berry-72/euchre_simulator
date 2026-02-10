@@ -1,5 +1,6 @@
 import copy
 import time
+import logging
 
 from injector import inject
 
@@ -7,6 +8,8 @@ from dtos.BasicDto import Game, SuitColorEnum, GameSimulation
 from services.GameService import GameService
 from services.RecordService import RecordService
 from utils.BasicsUtil import create_player_id_map
+
+logger = logging.getLogger(__name__)
 
 
 class GameSimulationService:
@@ -24,7 +27,7 @@ class GameSimulationService:
 
         game_id = 1
         while not simulation.is_complete:
-            print('simulating game', game_id)
+            logger.debug('simulating game %s', game_id)
 
             game = Game(
                 players=simulation.players,

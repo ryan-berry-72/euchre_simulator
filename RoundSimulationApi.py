@@ -1,9 +1,17 @@
+import logging
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from typing import List, Dict
 
 from matplotlib import pyplot as plt
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 from constants.GameConstants import PLAYER_COUNT, HAND_MAX_CARD_COUNT
 from dtos.BasicDto import Player, Call, CallTypeEnum, SuitColorEnum
@@ -49,7 +57,7 @@ def simulate_round():
     try:
         # serialize request
         simulation_request = to_simulation_request(request.json)
-        print(simulation_request)
+        logger.info('Received simulation request: quantity=%s', simulation_request.quantity)
 
         # transform to RoundSimulation
         simulation = transform_simulation_request_to_simulation(simulation_request)
@@ -60,14 +68,14 @@ def simulate_round():
         # transform from RoundSimulation
         simulation_response = transform_simulation_to_response(simulation)
 
-        print(simulation_response)
+        logger.info('Simulation response: %s', simulation_response)
 
         # pretty_sim_count = f'{simulation.quantity:,}'
         # plot_dict(simulation_response.avg_points_map, 'Team', 'Average Points Won', f'Simulated {pretty_sim_count} Rounds', 4)
 
         return jsonify(simulation_response), 200
     except Exception as e:
-        print(e)
+        logger.error('Simulation failed: %s', e, exc_info=True)
         return jsonify(error=str(e)), 500
 
 
