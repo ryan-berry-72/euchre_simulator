@@ -35,6 +35,15 @@ def get_next_player(player_id_map, last_player_id):
     return get_next_player(player_id_map, next_player_id)
 
 
+# precomputes {player_id: next_player} for O(1) lookup
+# covers all IDs 1-4 so dealer_id lookups work even in loner (3-player) games
+def create_next_player_map(player_id_map):
+    next_player_map = {}
+    for player_id in range(1, 5):
+        next_player_map[player_id] = get_next_player(player_id_map, player_id)
+    return next_player_map
+
+
 # determines the opposite team of the given team
 def get_opposing_team(team):
     if team == SuitColorEnum.BLACK:

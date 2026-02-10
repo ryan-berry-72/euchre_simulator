@@ -22,8 +22,12 @@ class RoundService:
         self.play_round(euchre_round)
 
     # plays the round assuming cards are dealt and a call is made
-    def play_round(self, euchre_round):
-        leader_id = get_next_player(euchre_round.player_id_map, euchre_round.dealer_id).id
+    def play_round(self, euchre_round, next_player_map=None):
+        if next_player_map is None:
+            next_player_map = {}
+            for pid in euchre_round.player_id_map:
+                next_player_map[pid] = get_next_player(euchre_round.player_id_map, pid)
+        leader_id = next_player_map[euchre_round.dealer_id].id
         trick = Trick(
             plays=[],
             winning_play=None,
@@ -34,7 +38,7 @@ class RoundService:
         )
         while not euchre_round.is_complete:
             # play trick
-            self.trick_service.play_trick(trick, euchre_round.player_id_map)
+            self.trick_service.play_trick(trick, euchre_round.player_id_map, next_player_map)
 
             # update round
             self.update_round_with_trick(euchre_round, trick)

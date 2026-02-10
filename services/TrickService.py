@@ -4,7 +4,7 @@ from injector import inject
 
 from constants.GameConstants import trump_and_play_suit_hierarchy
 from dtos.BasicDto import Play, Trick, Player
-from utils.BasicsUtil import get_next_player
+from utils.BasicsUtil import create_next_player_map
 from utils.CardUtil import get_effective_suit
 
 
@@ -13,7 +13,9 @@ class TrickService:
     def __init__(self, play_service):
         self.play_service = play_service
 
-    def play_trick(self, trick: Trick, player_id_map: Dict[int, Player]) -> None:
+    def play_trick(self, trick: Trick, player_id_map: Dict[int, Player], next_player_map=None) -> None:
+        if next_player_map is None:
+            next_player_map = create_next_player_map(player_id_map)
         player = player_id_map[trick.leader_id]
         play = Play(
             card=None,
@@ -33,7 +35,7 @@ class TrickService:
                 trick.is_complete = True
             else:
                 # prepare next play
-                player = get_next_player(player_id_map, play.player.id)
+                player = next_player_map[play.player.id]
                 play = Play(
                     card=None,
                     player=player,

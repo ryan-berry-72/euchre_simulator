@@ -12,7 +12,7 @@ from services.PlayerService import PlayerService
 from services.RoundService import RoundService
 from services.ShuffleService import ShuffleService
 from services.TrickService import TrickService
-from utils.BasicsUtil import create_player_id_map, get_teammate
+from utils.BasicsUtil import create_player_id_map, create_next_player_map, get_teammate
 import random
 import logging
 import time
@@ -60,6 +60,12 @@ class RoundSimulationService:
         for player in round_simulation.players:
             player_cards_map[player.id] = list(player.hand.remaining_cards)
 
+        # precompute values that don't change between rounds
+        remaining_cards_template = self.get_remaining_cards(round_simulation.players)
+        player_id_map = create_player_id_map(round_simulation.players)
+        next_player_map = create_next_player_map(player_id_map)
+        players_list = list(round_simulation.players)
+
         total = round_simulation.quantity
         log_interval = max(1, total // 10)
         start_time = time.time()
@@ -73,7 +79,7 @@ class RoundSimulationService:
                 round_simulation.dealer_id = random.choice(player_ids)
 
             # shuffle and deal remaining cards
-            remaining_cards = self.get_remaining_cards(round_simulation.players)
+            remaining_cards = list(remaining_cards_template)
             self.shuffle_service.shuffle_cards(remaining_cards)
             self.dealing_service.deal_cards(round_simulation.players, remaining_cards)
 
@@ -82,8 +88,8 @@ class RoundSimulationService:
                 round_simulation.call.player_id = random.choice(player_ids)
 
             euchre_round = Round(
-                players=list(round_simulation.players),
-                player_id_map=create_player_id_map(round_simulation.players),
+                players=players_list,
+                player_id_map=player_id_map,
                 tricks=[],
                 tricks_won_map={SuitColorEnum.BLACK: 0, SuitColorEnum.RED: 0},
                 points_won_map={SuitColorEnum.BLACK: 0, SuitColorEnum.RED: 0},
@@ -93,7 +99,7 @@ class RoundSimulationService:
                 dealer_id=round_simulation.dealer_id,
             )
 
-            self.round_service.play_round(euchre_round)
+            self.round_service.play_round(euchre_round, next_player_map)
             round_simulation.rounds.append(euchre_round)
             logger.debug('Round %s result: %s', round_id,
                          '-'.join([str(v) for v in euchre_round.points_won_map.values()]))
