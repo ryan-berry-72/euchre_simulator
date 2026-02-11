@@ -17,8 +17,7 @@ class RoundService:
         cards = list(euchre_deck)
         self.shuffle_service.shuffle_cards(cards)
         self.dealing_service.deal_cards(euchre_round.players, cards)
-        if euchre_round.flipped_card is None:
-            euchre_round.flipped_card = cards[20]
+        euchre_round.flipped_card = cards[20]
         self.call_service.update_call(euchre_round)
         self.play_round(euchre_round)
 
