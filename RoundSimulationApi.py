@@ -116,8 +116,14 @@ def validate_simulation(simulation: RoundSimulation):
                 raise ValueError(f"Duplicate card '{card}' found across player hands")
             all_cards.append(card)
 
-    # Check that flipped card is not in any player's hand
-    if simulation.flipped_card is not None and simulation.flipped_card in all_cards:
+    # Check that flipped card is not in any player's hand.
+    # For P1 calls the dealer has already picked up the flipped card,
+    # so it legitimately appears in a player's hand.
+    is_p2_call = (simulation.call is not None
+                  and simulation.call.type in (CallTypeEnum.REGULAR_P2, CallTypeEnum.LONER_P2))
+    if (simulation.flipped_card is not None
+            and simulation.flipped_card in all_cards
+            and is_p2_call):
         raise ValueError(f"Flipped card '{simulation.flipped_card}' is already in a player's hand")
 
     # For P1 calls, the call suit must match the flipped card's suit
