@@ -56,7 +56,11 @@ class RoundSimulationService:
             player_cards_map[player.id] = list(player.hand.remaining_cards)
 
         # precompute values that don't change between rounds
-        remaining_cards_template = self.get_remaining_cards(round_simulation.players)
+        # exclude the flipped card so it is never randomly dealt to a player
+        remaining_cards_template = [
+            c for c in self.get_remaining_cards(round_simulation.players)
+            if c != round_simulation.flipped_card
+        ]
         player_id_map = create_player_id_map(round_simulation.players)
         next_player_map = create_next_player_map(player_id_map)
         players_list = list(round_simulation.players)

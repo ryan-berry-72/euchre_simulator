@@ -27,7 +27,6 @@ from services.simulation.RoundSimulationService import RoundSimulationService
 from utils.BasicsUtil import create_player_name_map
 from utils.CardUtil import get_card_by_name, get_cards_by_names, get_suit_by_name
 
-
 MAX_SIMULATION_QUANTITY = 1_000_000
 
 app = Flask(__name__)
@@ -116,15 +115,21 @@ def validate_simulation(simulation: RoundSimulation):
                 raise ValueError(f"Duplicate card '{card}' found across player hands")
             all_cards.append(card)
 
-    # Check that flipped card is not in any player's hand.
-    # For P1 calls the dealer has already picked up the flipped card,
-    # so it legitimately appears in a player's hand.
-    is_p2_call = (simulation.call is not None
-                  and simulation.call.type in (CallTypeEnum.REGULAR_P2, CallTypeEnum.LONER_P2))
-    if (simulation.flipped_card is not None
-            and simulation.flipped_card in all_cards
-            and is_p2_call):
-        raise ValueError(f"Flipped card '{simulation.flipped_card}' is already in a player's hand")
+    # Flipped card / hand validation based on call phase and dealer.
+    if simulation.flipped_card is not None:
+        holders = [p for p in simulation.players
+                   if simulation.flipped_card in p.hand.remaining_cards]
+        if holders and simulation.call is not None:
+            if simulation.call.type.is_phase_2():
+                # P2: card was turned down — nobody should have it
+                raise ValueError(
+                    f"Flipped card '{simulation.flipped_card}' is already in a player's hand")
+            if (simulation.call.type.is_phase_1()
+                    and simulation.dealer_id != 0
+                    and holders[0].id != simulation.dealer_id):
+                # P1 with known dealer: only the dealer picks it up
+                raise ValueError(
+                    f"Flipped card '{simulation.flipped_card}' is in a non-dealer player's hand")
 
     # For P1 calls, the call suit must match the flipped card's suit
     if (simulation.call is not None

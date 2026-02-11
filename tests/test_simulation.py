@@ -111,6 +111,17 @@ class TestSimulation(unittest.TestCase):
             pts = tuple(rd.points_won_map.values())
             self.assertIn(pts, valid)
 
+    def test_flipped_card_never_dealt_to_player(self):
+        """The flipped card must not appear in any player's played cards."""
+        flipped = "ace_of_hearts"
+        flipped_card = euchre_deck_map[flipped]
+        sim = run_simulation([[], [], [], []], spades, 1, 1,
+                             quantity=200, flipped=flipped)
+        for rd in sim.rounds:
+            cards = played_cards(rd)
+            self.assertNotIn(flipped_card, cards,
+                             f"Round {rd.id}: flipped card was dealt and played")
+
 
 class TestLonerSimulation(unittest.TestCase):
     """Loner mode: teammate removed, 3 players per round."""

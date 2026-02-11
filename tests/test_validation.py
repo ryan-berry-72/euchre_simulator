@@ -148,7 +148,7 @@ class TestFlippedCardValidation(unittest.TestCase):
         self.assertIn("already in a player's hand", resp.get_json()["error"])
 
     def test_flipped_card_in_dealer_hand_p1_allowed(self):
-        """P1 call: dealer picked up the flipped card, so it may be in a hand."""
+        """P1 call: dealer picked up the flipped card, so it may be in dealer's hand."""
         payload = valid_payload()
         # dealer is Alice (player 1), flipped card is ace_of_spades, call_type P1
         payload["player_hands"][0] = ["ace_of_spades", "ten_of_spades", "jack_of_spades"]
@@ -158,6 +158,19 @@ class TestFlippedCardValidation(unittest.TestCase):
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, 200)
+
+    def test_flipped_card_in_non_dealer_hand_p1_rejected(self):
+        """P1 call: only the dealer picks up, so a non-dealer holding it is illegal."""
+        payload = valid_payload()
+        # dealer is Alice (player 1), but Bob (player 2) has the flipped card
+        payload["player_hands"][1] = ["ace_of_spades", "ten_of_hearts"]
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("non-dealer", resp.get_json()["error"])
 
 
 class TestP1SuitConsistency(unittest.TestCase):
