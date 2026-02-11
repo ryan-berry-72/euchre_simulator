@@ -362,5 +362,58 @@ class TestPlayerCountValidation(unittest.TestCase):
         self.assertIn("too many cards", resp.get_json()["error"])
 
 
+class TestPassingPlayerValidation(unittest.TestCase):
+
+    def setUp(self):
+        self.client = app.test_client()
+
+    def test_passing_player_excluded_from_caller(self):
+        """With 3 passing players, the remaining player is always the caller."""
+        payload = valid_payload()
+        payload["caller_name"] = ""  # random caller
+        payload["passing_player_names"] = ["Alice", "Carol", "Dave"]
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_all_players_passing_rejected(self):
+        payload = valid_payload()
+        payload["caller_name"] = ""
+        payload["passing_player_names"] = ["Alice", "Bob", "Carol", "Dave"]
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("cannot include all players", resp.get_json()["error"])
+
+    def test_explicit_caller_in_passing_list_rejected(self):
+        payload = valid_payload()
+        payload["caller_name"] = "Bob"
+        payload["passing_player_names"] = ["Bob", "Carol"]
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("cannot also be in passing_player_names", resp.get_json()["error"])
+
+    def test_invalid_passing_player_name_rejected(self):
+        payload = valid_payload()
+        payload["passing_player_names"] = ["Nobody"]
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("does not match any player", resp.get_json()["error"])
+
+
 if __name__ == "__main__":
     unittest.main()

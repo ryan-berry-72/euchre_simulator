@@ -43,6 +43,8 @@ class RoundSimulationService:
             round_simulation.players.remove(get_teammate(round_simulation.players, caller))
 
         player_ids = [player.id for player in round_simulation.players]
+        passing_set = set(round_simulation.passing_player_ids)
+        eligible_caller_ids = [pid for pid in player_ids if pid not in passing_set]
 
         if round_simulation.flipped_card is None:
             # get random card from remaining cards
@@ -89,7 +91,7 @@ class RoundSimulationService:
             self.dealing_service.deal_cards(round_simulation.players, remaining_cards, track_starting_cards=False)
 
             # build call for this round
-            round_call = self.call_service.build_round_call(round_simulation.call, player_ids)
+            round_call = self.call_service.build_round_call(round_simulation.call, eligible_caller_ids)
 
             euchre_round = Round(
                 players=players_list,

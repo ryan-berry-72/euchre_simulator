@@ -87,7 +87,8 @@ def build_round(players, trump, caller_id, dealer_id):
 
 
 def run_simulation(player_card_names, trump, caller_id, dealer_id, quantity,
-                   call_type=CallTypeEnum.REGULAR_P1, flipped="ace_of_hearts"):
+                   call_type=CallTypeEnum.REGULAR_P1, flipped="ace_of_hearts",
+                   passing_player_ids=None):
     svc = make_simulation_service()
     players = make_players()
     for i, names in enumerate(player_card_names):
@@ -100,6 +101,7 @@ def run_simulation(player_card_names, trump, caller_id, dealer_id, quantity,
         quantity=quantity,
         dealer_id=dealer_id,
         keep_rounds=True,
+        passing_player_ids=passing_player_ids or [],
     ))
 
 

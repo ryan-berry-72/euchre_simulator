@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Tuple, List, Dict
 
 from dtos.BasicDto import Player, Game, Round, Call, Card
@@ -35,6 +35,7 @@ class RoundSimulation:
     total_points: dict = None
     total_wins: dict = None
     total_tricks_by_player: dict = None
+    passing_player_ids: List[int] = field(default_factory=list)
 
 
 @dataclass
@@ -47,6 +48,7 @@ class RoundSimulationRequest:
     call_suit: str
     call_type: str  # maps to CallTypeEnum
     quantity: int = 0  # number of games to be simulated
+    passing_player_names: List[str] = field(default_factory=list)
 
 
 @dataclass

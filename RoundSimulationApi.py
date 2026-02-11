@@ -95,7 +95,8 @@ def to_simulation_request(json_data: Dict) -> RoundSimulationRequest:
         caller_name=json_data.get('caller_name', ''),
         call_suit=json_data.get('call_suit', ''),
         call_type=json_data.get('call_type', ''),
-        quantity=json_data.get('quantity', '')
+        quantity=json_data.get('quantity', ''),
+        passing_player_names=json_data.get('passing_player_names', [])
     )
 
 
@@ -147,13 +148,29 @@ def transform_simulation_request_to_simulation(simulation_request: RoundSimulati
     players = get_players_from_sim(simulation_request)
     player_name_map = create_player_name_map(players)
 
+    passing_player_ids = [
+        get_id_or_default(name, player_name_map, 0)
+        for name in simulation_request.passing_player_names
+    ]
+
+    caller_id = get_id_or_default(simulation_request.caller_name, player_name_map, 0)
+    if caller_id != 0 and caller_id in passing_player_ids:
+        raise ValueError(
+            f"caller_name '{simulation_request.caller_name}' cannot also be in passing_player_names"
+        )
+
+    all_player_ids = {p.id for p in players}
+    if passing_player_ids and set(passing_player_ids) >= all_player_ids:
+        raise ValueError("passing_player_names cannot include all players — someone must be eligible to call")
+
     return RoundSimulation(
         players=players,
         call=get_call_from_sim(simulation_request, player_name_map),
         rounds=[],
         flipped_card=get_card_by_name(simulation_request.flipped_card),
         dealer_id=get_id_or_default(simulation_request.dealer_name, player_name_map, 0),
-        quantity=simulation_request.quantity
+        quantity=simulation_request.quantity,
+        passing_player_ids=passing_player_ids,
     )
 
 

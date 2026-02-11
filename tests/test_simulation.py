@@ -188,6 +188,31 @@ class TestLonerSimulation(unittest.TestCase):
             self.assertEqual(rd.points_won_map[SuitColorEnum.BLACK], 4)
 
 
+class TestPassingPlayers(unittest.TestCase):
+    """Passing players must never be chosen as caller but still play cards."""
+
+    def test_passing_players_never_call(self):
+        """Over many rounds, passing players are never the caller."""
+        sim = run_simulation(
+            [[], [], [], []], spades, caller_id=0, dealer_id=1,
+            quantity=200, passing_player_ids=[2, 3, 4],
+        )
+        for rd in sim.rounds:
+            self.assertEqual(rd.call.player_id, 1,
+                             f"Round {rd.id}: expected caller 1, got {rd.call.player_id}")
+
+    def test_passing_players_still_play_cards(self):
+        """Passing players still appear in trick plays."""
+        sim = run_simulation(
+            [[], [], [], []], spades, caller_id=0, dealer_id=1,
+            quantity=50, passing_player_ids=[2, 3],
+        )
+        for rd in sim.rounds:
+            by_player = played_cards_by_player(rd)
+            self.assertIn(2, by_player, f"Round {rd.id}: player 2 didn't play")
+            self.assertIn(3, by_player, f"Round {rd.id}: player 3 didn't play")
+
+
 class TestGame(unittest.TestCase):
     """Integration tests for a full game via GameService."""
 
