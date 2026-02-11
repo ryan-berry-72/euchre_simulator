@@ -415,5 +415,62 @@ class TestPassingPlayerValidation(unittest.TestCase):
         self.assertIn("does not match any player", resp.get_json()["error"])
 
 
+class TestShorthandCardNotation(unittest.TestCase):
+
+    def setUp(self):
+        self.client = app.test_client()
+
+    def test_shorthand_cards_in_hands(self):
+        payload = valid_payload()
+        payload["player_hands"][0] = ["9S", "10S", "JS"]
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_shorthand_flipped_card(self):
+        payload = valid_payload()
+        payload["flipped_card"] = "AS"
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_shorthand_call_suit(self):
+        payload = valid_payload()
+        payload["call_suit"] = "S"
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_mixed_long_and_short(self):
+        payload = valid_payload()
+        payload["player_hands"][0] = ["nine_of_spades", "10S", "JS"]
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_invalid_shorthand_rejected(self):
+        payload = valid_payload()
+        payload["player_hands"][0] = ["XZ", "ten_of_spades"]
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("Invalid card name", resp.get_json()["error"])
+
+
 if __name__ == "__main__":
     unittest.main()
