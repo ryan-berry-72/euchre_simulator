@@ -5,11 +5,12 @@ from constants.GameConstants import (
     euchre_deck, euchre_deck_map, HAND_MAX_CARD_COUNT,
 )
 from dtos.BasicDto import (
-    Call, CallTypeEnum, Round, SuitColorEnum,
+    Call, CallTypeEnum, Game, Round, SuitColorEnum,
 )
 from dtos.SimulationDto import RoundSimulation
 from services.CallService import CallService
 from services.DealingService import DealingService
+from services.GameService import GameService
 from services.PlayService import PlayService
 from services.PlayerService import PlayerService
 from services.RoundService import RoundService
@@ -43,6 +44,22 @@ def make_simulation_service():
         call_service=CallService(),
         player_service=PlayerService(),
         round_service=make_round_service(),
+    )
+
+
+def make_game_service():
+    return GameService(round_service=make_round_service())
+
+
+def make_game(dealer_start_id=1):
+    players = make_players()
+    return Game(
+        players=tuple(players),
+        player_id_map=create_player_id_map(players),
+        dealer_start_id=dealer_start_id,
+        rounds=[],
+        team_score_map={SuitColorEnum.BLACK: 0, SuitColorEnum.RED: 0},
+        winning_team=None,
     )
 
 

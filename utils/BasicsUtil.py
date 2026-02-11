@@ -52,11 +52,3 @@ def get_opposing_team(team):
         return SuitColorEnum.BLACK
     else:
         return None
-
-
-# creates a new dict with the given map and adds the increase amount to the new dict's values
-def create_increased_hierarchy(hierarchy_map, increase_amount):
-    increased_hierarchy = {}.update(hierarchy_map)
-    for key, value in increased_hierarchy.items():
-        increased_hierarchy[key] = value + increase_amount
-    return increased_hierarchy

@@ -84,6 +84,18 @@ class TestQuantityValidation(unittest.TestCase):
         self.assertIn("quantity must be a positive integer", resp.get_json()["error"])
 
 
+    def test_quantity_exceeds_max(self):
+        payload = valid_payload()
+        payload["quantity"] = 1_000_001
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("quantity must not exceed", resp.get_json()["error"])
+
+
 class TestDuplicateCardValidation(unittest.TestCase):
 
     def setUp(self):

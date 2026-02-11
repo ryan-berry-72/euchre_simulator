@@ -28,6 +28,8 @@ from utils.BasicsUtil import create_player_name_map
 from utils.CardUtil import get_card_by_name, get_cards_by_names, get_suit_by_name
 
 
+MAX_SIMULATION_QUANTITY = 1_000_000
+
 app = Flask(__name__)
 CORS(app)
 player_service = PlayerService()
@@ -101,6 +103,8 @@ def to_simulation_request(json_data: Dict) -> RoundSimulationRequest:
 def validate_simulation_request(simulation_request: RoundSimulationRequest):
     if simulation_request.quantity is not None and simulation_request.quantity <= 0:
         raise ValueError(f"quantity must be a positive integer, got {simulation_request.quantity}")
+    if simulation_request.quantity is not None and simulation_request.quantity > MAX_SIMULATION_QUANTITY:
+        raise ValueError(f"quantity must not exceed {MAX_SIMULATION_QUANTITY}, got {simulation_request.quantity}")
 
 
 def validate_simulation(simulation: RoundSimulation):

@@ -1,5 +1,3 @@
-import random
-
 from injector import inject
 
 from constants.GameConstants import euchre_deck
@@ -16,8 +14,11 @@ class RoundService:
         self.shuffle_service = shuffle_service
 
     def prepare_and_play_round(self, euchre_round):
-        self.shuffle_service.shuffle_cards(euchre_deck)
-        self.dealing_service.deal_cards(euchre_round)
+        cards = list(euchre_deck)
+        self.shuffle_service.shuffle_cards(cards)
+        self.dealing_service.deal_cards(euchre_round.players, cards)
+        if euchre_round.flipped_card is None:
+            euchre_round.flipped_card = cards[20]
         self.call_service.update_call(euchre_round)
         self.play_round(euchre_round)
 
@@ -48,25 +49,6 @@ class RoundService:
             trick = Trick([], None, euchre_round.call, None, trick.id + 1, leader_id)
 
         self.update_team_points_won(euchre_round)
-
-    # assigns shuffled cards to each player's hand and flips top card
-    def deal_cards(self, euchre_round):
-        shuffled_cards = self.shuffle_service.shuffle_cards(euchre_deck)
-
-        # deal cards to remaining_cards list
-        next_player = get_next_player(euchre_round.player_id_map, euchre_round.dealer_id)
-        while len(shuffled_cards) > 4:
-            next_player.hand.remaining_cards.append(shuffled_cards.pop())
-            next_player = get_next_player(euchre_round.player_id_map, next_player.id)
-
-        # flip top card
-        euchre_round.flipped_card = shuffled_cards.pop()
-
-        # update starting_cards for each player
-        for key, value in euchre_round.player_id_map.items():
-            if len(value.hand.remaining_cards) != 5:
-                raise Exception('Invalid deal. Player ' + str(value) + ' should have 5 cards')
-            value.hand.starting_cards = tuple(value.hand.remaining_cards)
 
     # update round values based on completed trick
     @staticmethod

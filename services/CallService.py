@@ -8,13 +8,6 @@ from utils.BasicsUtil import get_next_player, get_teammate, create_player_id_map
 
 
 class CallService:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(CallService, cls).__new__(cls)
-        return cls._instance
-
     # randomly determines the call and updates to the round
     def update_call(self, euchre_round: Round) -> None:
         call = Call(

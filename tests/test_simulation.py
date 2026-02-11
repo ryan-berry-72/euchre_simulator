@@ -10,6 +10,8 @@ from dtos.SimulationDto import RoundSimulation
 from tests.conftest import (
     assert_valid_round,
     build_round,
+    make_game,
+    make_game_service,
     make_players,
     make_round_service,
     make_simulation_service,
@@ -173,6 +175,43 @@ class TestLonerSimulation(unittest.TestCase):
         for rd in sim.rounds:
             self.assertEqual(rd.tricks_won_map[SuitColorEnum.BLACK], 5)
             self.assertEqual(rd.points_won_map[SuitColorEnum.BLACK], 4)
+
+
+class TestGame(unittest.TestCase):
+    """Integration tests for a full game via GameService."""
+
+    def _play_game(self):
+        svc = make_game_service()
+        game = make_game(dealer_start_id=1)
+        svc.play_game(game)
+        return game
+
+    def test_game_completes(self):
+        game = self._play_game()
+        self.assertTrue(game.is_complete)
+        self.assertIsNotNone(game.winning_team)
+
+    def test_winning_team_has_at_least_10_points(self):
+        game = self._play_game()
+        self.assertGreaterEqual(game.team_score_map[game.winning_team], 10)
+
+    def test_losing_team_has_less_than_10_points(self):
+        game = self._play_game()
+        for team, score in game.team_score_map.items():
+            if team != game.winning_team:
+                self.assertLess(score, 10)
+
+    def test_game_has_at_least_5_rounds(self):
+        game = self._play_game()
+        # minimum 5 rounds to reach 10 pts (max 2 pts/round)
+        self.assertGreaterEqual(len(game.rounds), 5)
+
+    def test_dealer_rotates_each_round(self):
+        game = self._play_game()
+        expected_dealer = 1
+        for rd in game.rounds:
+            self.assertEqual(rd.dealer_id, expected_dealer)
+            expected_dealer = (expected_dealer % 4) + 1
 
 
 if __name__ == "__main__":

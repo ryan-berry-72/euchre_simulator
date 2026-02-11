@@ -6,13 +6,6 @@ from dtos.BasicDto import Player, Hand, SuitColorEnum
 
 
 class PlayerService:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(PlayerService, cls).__new__(cls)
-        return cls._instance
-
     @staticmethod
     def create_players(quantity: int) -> List[Player]:
         players = []

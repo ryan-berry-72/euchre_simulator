@@ -2,6 +2,7 @@
 import random
 import unittest
 
+import dtos.BasicDto
 from constants.GameConstants import (
     euchre_deck, euchre_deck_map, spades, hearts, diamonds, suits,
     HAND_MAX_CARD_COUNT,
@@ -167,6 +168,79 @@ class TestBuildRoundCall(unittest.TestCase):
             base = Call(suit=None, type=call_type, player_id=0)
             result = CallService.build_round_call(base, self.PLAYER_IDS)
             self.assertEqual(result.type, call_type)
+
+
+class TestTrickResolution(unittest.TestCase):
+    """Direct tests for TrickService.update_play_results()."""
+
+    def _make_trick(self, trump):
+        return dtos.BasicDto.Trick(
+            plays=[],
+            winning_play=None,
+            call=Call(suit=trump, type=CallTypeEnum.REGULAR_P1, player_id=1),
+            play_suit=None,
+            id=1,
+            leader_id=1,
+        )
+
+    def _make_play(self, card_name, player_id=1, is_lead=False):
+        card = euchre_deck_map[card_name]
+        p = Player(name=f"P{player_id}", team=SuitColorEnum.BLACK if player_id % 2 else SuitColorEnum.RED,
+                   id=player_id, hand=Hand(starting_cards=[], remaining_cards=[]))
+        return Play(card=card, player=p, id=len([]) + 1, is_lead=is_lead)
+
+    def test_lead_sets_play_suit_and_winner(self):
+        from services.TrickService import TrickService
+        trick = self._make_trick(spades)
+        lead = self._make_play("nine_of_hearts", player_id=1, is_lead=True)
+        TrickService.update_play_results(trick, lead)
+        self.assertEqual(trick.play_suit, hearts)
+        self.assertIs(trick.winning_play, lead)
+
+    def test_higher_card_in_lead_suit_wins(self):
+        from services.TrickService import TrickService
+        trick = self._make_trick(spades)
+        lead = self._make_play("nine_of_hearts", player_id=1, is_lead=True)
+        TrickService.update_play_results(trick, lead)
+        follow = self._make_play("ace_of_hearts", player_id=2, is_lead=False)
+        TrickService.update_play_results(trick, follow)
+        self.assertIs(trick.winning_play, follow)
+
+    def test_trump_beats_non_trump_lead(self):
+        from services.TrickService import TrickService
+        trick = self._make_trick(spades)
+        lead = self._make_play("ace_of_hearts", player_id=1, is_lead=True)
+        TrickService.update_play_results(trick, lead)
+        follow = self._make_play("nine_of_spades", player_id=2, is_lead=False)
+        TrickService.update_play_results(trick, follow)
+        self.assertIs(trick.winning_play, follow)
+
+    def test_right_bower_beats_everything(self):
+        from services.TrickService import TrickService
+        trick = self._make_trick(spades)
+        lead = self._make_play("ace_of_hearts", player_id=1, is_lead=True)
+        TrickService.update_play_results(trick, lead)
+        follow = self._make_play("jack_of_spades", player_id=2, is_lead=False)
+        TrickService.update_play_results(trick, follow)
+        self.assertIs(trick.winning_play, follow)
+
+    def test_left_bower_counts_as_trump(self):
+        from services.TrickService import TrickService
+        trick = self._make_trick(spades)
+        lead = self._make_play("ace_of_hearts", player_id=1, is_lead=True)
+        TrickService.update_play_results(trick, lead)
+        follow = self._make_play("jack_of_clubs", player_id=2, is_lead=False)
+        TrickService.update_play_results(trick, follow)
+        self.assertIs(trick.winning_play, follow)
+
+    def test_offsuit_non_trump_cannot_beat_lead(self):
+        from services.TrickService import TrickService
+        trick = self._make_trick(spades)
+        lead = self._make_play("nine_of_hearts", player_id=1, is_lead=True)
+        TrickService.update_play_results(trick, lead)
+        follow = self._make_play("ace_of_diamonds", player_id=2, is_lead=False)
+        TrickService.update_play_results(trick, follow)
+        self.assertIs(trick.winning_play, lead)
 
 
 if __name__ == "__main__":
