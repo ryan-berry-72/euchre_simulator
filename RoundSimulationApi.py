@@ -59,8 +59,14 @@ def simulate_round():
         simulation_request = to_simulation_request(request.json)
         logger.info('Received simulation request: quantity=%s', simulation_request.quantity)
 
+        # validate request fields
+        validate_simulation_request(simulation_request)
+
         # transform to RoundSimulation
         simulation = transform_simulation_request_to_simulation(simulation_request)
+
+        # validate cross-field business rules
+        validate_simulation(simulation)
 
         # simulate rounds
         simulation = round_simulation_service.simulate(simulation)
@@ -70,10 +76,10 @@ def simulate_round():
 
         logger.info('Simulation response: %s', simulation_response)
 
-        # pretty_sim_count = f'{simulation.quantity:,}'
-        # plot_dict(simulation_response.avg_points_map, 'Team', 'Average Points Won', f'Simulated {pretty_sim_count} Rounds', 4)
-
         return jsonify(simulation_response), 200
+    except ValueError as e:
+        logger.warning('Validation error: %s', e)
+        return jsonify(error=str(e)), 400
     except Exception as e:
         logger.error('Simulation failed: %s', e, exc_info=True)
         return jsonify(error=str(e)), 500
@@ -90,6 +96,36 @@ def to_simulation_request(json_data: Dict) -> RoundSimulationRequest:
         call_type=json_data.get('call_type', ''),
         quantity=json_data.get('quantity', '')
     )
+
+
+def validate_simulation_request(simulation_request: RoundSimulationRequest):
+    if simulation_request.quantity is not None and simulation_request.quantity <= 0:
+        raise ValueError(f"quantity must be a positive integer, got {simulation_request.quantity}")
+
+
+def validate_simulation(simulation: RoundSimulation):
+    # Check for duplicate cards across all player hands
+    all_cards = []
+    for player in simulation.players:
+        for card in player.hand.remaining_cards:
+            if card in all_cards:
+                raise ValueError(f"Duplicate card '{card}' found across player hands")
+            all_cards.append(card)
+
+    # Check that flipped card is not in any player's hand
+    if simulation.flipped_card is not None and simulation.flipped_card in all_cards:
+        raise ValueError(f"Flipped card '{simulation.flipped_card}' is already in a player's hand")
+
+    # For P1 calls, the call suit must match the flipped card's suit
+    if (simulation.call is not None
+            and simulation.flipped_card is not None
+            and simulation.call.type in (CallTypeEnum.REGULAR_P1, CallTypeEnum.LONER_P1)
+            and simulation.call.suit != simulation.flipped_card.suit):
+        raise ValueError(
+            f"For phase 1 calls, the call suit must match the flipped card's suit "
+            f"('{simulation.flipped_card.suit.name.name.lower()}'), "
+            f"got '{simulation.call.suit.name.name.lower()}'"
+        )
 
 
 def transform_simulation_request_to_simulation(simulation_request: RoundSimulationRequest) -> RoundSimulation:
@@ -159,9 +195,9 @@ def get_players_from_sim(simulation_request: RoundSimulationRequest) -> List[Pla
     if simulation_request.player_names is not None:
         # validation
         if len(simulation_request.player_names) != len(players):
-            raise Exception('Number of player names must be', PLAYER_COUNT)
+            raise ValueError(f'Number of player names must be {PLAYER_COUNT}')
         if len(simulation_request.player_hands) != len(players):
-            raise Exception('Number of player hands must be', PLAYER_COUNT)
+            raise ValueError(f'Number of player hands must be {PLAYER_COUNT}')
 
         # update players and cards
         for i in range(len(simulation_request.player_names)):
@@ -170,28 +206,39 @@ def get_players_from_sim(simulation_request: RoundSimulationRequest) -> List[Pla
 
             # validate cards
             if len(players[i].hand.remaining_cards) > HAND_MAX_CARD_COUNT:
-                raise Exception(f"Player: {players[i]} has too many cards")
+                raise ValueError(f"Player: {players[i]} has too many cards")
             card_set = set()
             for card in players[i].hand.remaining_cards:
                 card_set_length = len(card_set)
                 card_set.add(card)
                 if len(card_set) == card_set_length:
-                    raise Exception(f"Duplicate card: {card} detected for player: {players[i]}")
+                    raise ValueError(f"Duplicate card: {card} detected for player: {players[i]}")
 
     return players
 
 
 def get_call_from_sim(simulation_request: RoundSimulationRequest, player_name_map: Dict[str, Player]) -> Call:
+    suit = get_suit_by_name(simulation_request.call_suit)
+    call_type_str = simulation_request.call_type
+    if not call_type_str:
+        call_type = CallTypeEnum.REGULAR_P1
+    else:
+        call_type = CallTypeEnum.create(call_type_str)
+    if suit is None:
+        return None
     return Call(
-        suit=get_suit_by_name(simulation_request.call_suit),
-        type=CallTypeEnum.create(simulation_request.call_type),
+        suit=suit,
+        type=call_type,
         player_id=get_id_or_default(simulation_request.caller_name, player_name_map, 0)
     )
 
 
 def get_id_or_default(player_name: str, player_name_map: Dict[str, Player], default_value: int) -> int:
-    if player_name is None or player_name not in player_name_map:
+    if not player_name:
         return default_value
+    if player_name not in player_name_map:
+        valid_names = ', '.join(sorted(player_name_map.keys()))
+        raise ValueError(f"'{player_name}' does not match any player. Valid names: {valid_names}")
     return player_name_map[player_name].id
 
 

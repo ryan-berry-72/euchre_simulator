@@ -130,7 +130,7 @@ class CallTypeEnum(Enum):
         try:
             return CallTypeEnum[input_string]
         except KeyError:
-            raise Exception(f"'{input_string}' is not a valid enum value.")
+            raise ValueError(f"'{input_string}' is not a valid enum value.")
 
 
 def create_card_name(value: CardValueEnum, name: SuitNameEnum) -> str:

@@ -2,7 +2,7 @@ import random
 
 from injector import inject
 
-from constants.GameConstants import suit_map
+from constants.GameConstants import suit_map, suits
 from dtos.BasicDto import Call, Round, CallTypeEnum
 from utils.BasicsUtil import get_next_player, get_teammate, create_player_id_map
 
@@ -93,6 +93,34 @@ class CallService:
         # remove teammate
         euchre_round.players.remove(teammate)
         euchre_round.player_id_map = create_player_id_map(euchre_round.players)
+
+    @staticmethod
+    def build_round_call(base_call, player_ids):
+        if base_call is None:
+            return Call(
+                suit=random.choice(suits),
+                type=CallTypeEnum.REGULAR_P1,
+                player_id=random.choice(player_ids),
+            )
+        if base_call.suit is None and base_call.player_id == 0:
+            return Call(
+                suit=random.choice(suits),
+                type=base_call.type,
+                player_id=random.choice(player_ids),
+            )
+        if base_call.suit is None:
+            return Call(
+                suit=random.choice(suits),
+                type=base_call.type,
+                player_id=base_call.player_id,
+            )
+        if base_call.player_id == 0:
+            return Call(
+                suit=base_call.suit,
+                type=base_call.type,
+                player_id=random.choice(player_ids),
+            )
+        return base_call
 
     @staticmethod
     def get_random_suit():

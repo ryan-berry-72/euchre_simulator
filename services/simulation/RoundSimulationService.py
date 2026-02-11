@@ -44,11 +44,6 @@ class RoundSimulationService:
 
         player_ids = [player.id for player in round_simulation.players]
 
-        if round_simulation.call is None:
-            # TODO: implement random call using call service
-            pass
-        random_caller = True if round_simulation.call.player_id == 0 else False
-
         if round_simulation.flipped_card is None:
             # get random card from remaining cards
             round_simulation.flipped_card = random.choice(self.get_remaining_cards(round_simulation.players))
@@ -89,9 +84,8 @@ class RoundSimulationService:
             self.shuffle_service.shuffle_cards(remaining_cards)
             self.dealing_service.deal_cards(round_simulation.players, remaining_cards, track_starting_cards=False)
 
-            # get random player to call
-            if random_caller:
-                round_simulation.call.player_id = random.choice(player_ids)
+            # build call for this round
+            round_call = self.call_service.build_round_call(round_simulation.call, player_ids)
 
             euchre_round = Round(
                 players=players_list,
@@ -100,7 +94,7 @@ class RoundSimulationService:
                 tricks_won_map={SuitColorEnum.BLACK: 0, SuitColorEnum.RED: 0},
                 points_won_map={SuitColorEnum.BLACK: 0, SuitColorEnum.RED: 0},
                 flipped_card=round_simulation.flipped_card,
-                call=round_simulation.call,
+                call=round_call,
                 id=round_id,
                 dealer_id=round_simulation.dealer_id,
             )

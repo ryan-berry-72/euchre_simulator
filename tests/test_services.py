@@ -1,12 +1,13 @@
-"""Unit tests for individual euchre services: dealing and play selection."""
+"""Unit tests for individual euchre services: dealing, play selection, and call building."""
 import random
 import unittest
 
 from constants.GameConstants import (
-    euchre_deck, euchre_deck_map, spades, hearts, diamonds,
+    euchre_deck, euchre_deck_map, spades, hearts, diamonds, suits,
     HAND_MAX_CARD_COUNT,
 )
-from dtos.BasicDto import CallTypeEnum, Hand, Play, Player, SuitColorEnum
+from dtos.BasicDto import Call, CallTypeEnum, Hand, Play, Player, SuitColorEnum
+from services.CallService import CallService
 from services.DealingService import DealingService
 from services.PlayService import PlayService
 from utils.CardUtil import get_effective_suit
@@ -97,6 +98,75 @@ class TestPlaySelection(unittest.TestCase):
             played.add(play.card)
         self.assertEqual(len(p.hand.remaining_cards), 0)
         self.assertEqual(played, {euchre_deck_map[n] for n in names})
+
+
+class TestBuildRoundCall(unittest.TestCase):
+    """build_round_call must fill in missing call fields with random values."""
+
+    PLAYER_IDS = [1, 2, 3, 4]
+    ITERATIONS = 50
+
+    def test_none_base_call_returns_random_call(self):
+        """A None base_call produces a fully random call with REGULAR_P1 type."""
+        seen_suits = set()
+        seen_players = set()
+        for _ in range(self.ITERATIONS):
+            result = CallService.build_round_call(None, self.PLAYER_IDS)
+            self.assertIn(result.suit, suits)
+            self.assertIn(result.player_id, self.PLAYER_IDS)
+            self.assertEqual(result.type, CallTypeEnum.REGULAR_P1)
+            seen_suits.add(result.suit)
+            seen_players.add(result.player_id)
+        self.assertGreater(len(seen_suits), 1, "Expected multiple random suits")
+        self.assertGreater(len(seen_players), 1, "Expected multiple random player_ids")
+
+    def test_missing_suit_and_player_randomises_both(self):
+        base = Call(suit=None, type=CallTypeEnum.REGULAR_P2, player_id=0)
+        seen_suits = set()
+        seen_players = set()
+        for _ in range(self.ITERATIONS):
+            result = CallService.build_round_call(base, self.PLAYER_IDS)
+            self.assertIn(result.suit, suits)
+            self.assertIn(result.player_id, self.PLAYER_IDS)
+            self.assertEqual(result.type, CallTypeEnum.REGULAR_P2)
+            seen_suits.add(result.suit)
+            seen_players.add(result.player_id)
+        self.assertGreater(len(seen_suits), 1)
+        self.assertGreater(len(seen_players), 1)
+
+    def test_missing_suit_only_randomises_suit(self):
+        base = Call(suit=None, type=CallTypeEnum.LONER_P1, player_id=3)
+        seen_suits = set()
+        for _ in range(self.ITERATIONS):
+            result = CallService.build_round_call(base, self.PLAYER_IDS)
+            self.assertIn(result.suit, suits)
+            self.assertEqual(result.player_id, 3)
+            self.assertEqual(result.type, CallTypeEnum.LONER_P1)
+            seen_suits.add(result.suit)
+        self.assertGreater(len(seen_suits), 1)
+
+    def test_missing_player_only_randomises_player(self):
+        base = Call(suit=hearts, type=CallTypeEnum.REGULAR_P1, player_id=0)
+        seen_players = set()
+        for _ in range(self.ITERATIONS):
+            result = CallService.build_round_call(base, self.PLAYER_IDS)
+            self.assertEqual(result.suit, hearts)
+            self.assertIn(result.player_id, self.PLAYER_IDS)
+            self.assertEqual(result.type, CallTypeEnum.REGULAR_P1)
+            seen_players.add(result.player_id)
+        self.assertGreater(len(seen_players), 1)
+
+    def test_fully_specified_returns_same_object(self):
+        base = Call(suit=spades, type=CallTypeEnum.REGULAR_P2, player_id=2)
+        result = CallService.build_round_call(base, self.PLAYER_IDS)
+        self.assertIs(result, base)
+
+    def test_preserves_type_across_all_call_types(self):
+        """Every CallTypeEnum value is preserved when suit/player are filled in."""
+        for call_type in CallTypeEnum:
+            base = Call(suit=None, type=call_type, player_id=0)
+            result = CallService.build_round_call(base, self.PLAYER_IDS)
+            self.assertEqual(result.type, call_type)
 
 
 if __name__ == "__main__":

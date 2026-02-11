@@ -56,7 +56,7 @@ def get_card_by_name(card_name: str) -> Card:
     if card_name is None or not card_name:
         return None
     if card_name not in euchre_deck_map:
-        raise Exception(f'Invalid card name: {card_name}')
+        raise ValueError(f'Invalid card name: {card_name}')
     return euchre_deck_map[card_name]
 
 
@@ -65,6 +65,8 @@ def get_cards_by_names(card_names: List[str]) -> List[Card]:
 
 
 def get_suit_by_name(suit_name) -> Suit:
+    if suit_name is None or not suit_name:
+        return None
     if suit_name not in suit_name_map:
-        raise Exception(f'Invalid suit name: {suit_name}')
+        raise ValueError(f'Invalid suit name: {suit_name}')
     return suit_name_map[suit_name]
