@@ -46,23 +46,18 @@ class RoundSimulationService:
         passing_set = set(round_simulation.passing_player_ids)
         eligible_caller_ids = [pid for pid in player_ids if pid not in passing_set]
 
-        if round_simulation.flipped_card is None:
-            # get random card from remaining cards
-            round_simulation.flipped_card = random.choice(self.get_remaining_cards(round_simulation.players))
-
-        random_dealer = True if round_simulation.dealer_id == 0 else False
+        fixed_flipped = round_simulation.flipped_card
+        random_dealer = round_simulation.dealer_id == 0
 
         # retain player starting cards in a map
         player_cards_map = {}
         for player in round_simulation.players:
             player_cards_map[player.id] = list(player.hand.remaining_cards)
 
-        # precompute values that don't change between rounds
-        # exclude the flipped card so it is never randomly dealt to a player
-        remaining_cards_template = [
-            c for c in self.get_remaining_cards(round_simulation.players)
-            if c != round_simulation.flipped_card
-        ]
+        # cards not assigned to any player, excluding the fixed flipped card if specified
+        unassigned_cards = self.get_remaining_cards(round_simulation.players)
+        if fixed_flipped is not None:
+            unassigned_cards = [c for c in unassigned_cards if c != fixed_flipped]
         player_id_map = create_player_id_map(round_simulation.players)
         next_player_map = create_next_player_map(player_id_map)
         players_list = list(round_simulation.players)
@@ -86,8 +81,9 @@ class RoundSimulationService:
                 round_simulation.dealer_id = random.choice(player_ids)
 
             # shuffle and deal remaining cards
-            remaining_cards = list(remaining_cards_template)
+            remaining_cards = list(unassigned_cards)
             self.shuffle_service.shuffle_cards(remaining_cards)
+            round_flipped_card = fixed_flipped if fixed_flipped is not None else remaining_cards.pop()
             self.dealing_service.deal_cards(round_simulation.players, remaining_cards, track_starting_cards=False)
 
             # build call for this round
@@ -99,7 +95,7 @@ class RoundSimulationService:
                 tricks=[],
                 tricks_won_map={SuitColorEnum.BLACK: 0, SuitColorEnum.RED: 0},
                 points_won_map={SuitColorEnum.BLACK: 0, SuitColorEnum.RED: 0},
-                flipped_card=round_simulation.flipped_card,
+                flipped_card=round_flipped_card,
                 call=round_call,
                 id=round_id,
                 dealer_id=round_simulation.dealer_id,

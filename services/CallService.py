@@ -95,25 +95,11 @@ class CallService:
                 type=CallTypeEnum.REGULAR_P1,
                 player_id=random.choice(player_ids),
             )
-        if base_call.suit is None and base_call.player_id == 0:
-            return Call(
-                suit=random.choice(suits),
-                type=base_call.type,
-                player_id=random.choice(player_ids),
-            )
-        if base_call.suit is None:
-            return Call(
-                suit=random.choice(suits),
-                type=base_call.type,
-                player_id=base_call.player_id,
-            )
-        if base_call.player_id == 0:
-            return Call(
-                suit=base_call.suit,
-                type=base_call.type,
-                player_id=random.choice(player_ids),
-            )
-        return base_call
+        suit = base_call.suit if base_call.suit is not None else random.choice(suits)
+        player_id = base_call.player_id if base_call.player_id != 0 else random.choice(player_ids)
+        if suit == base_call.suit and player_id == base_call.player_id:
+            return base_call
+        return Call(suit=suit, type=base_call.type, player_id=player_id)
 
     @staticmethod
     def get_random_suit():

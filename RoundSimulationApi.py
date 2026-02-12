@@ -101,6 +101,8 @@ def to_simulation_request(json_data: Dict) -> RoundSimulationRequest:
 
 
 def validate_simulation_request(simulation_request: RoundSimulationRequest):
+    if not simulation_request.call_type:
+        raise ValueError("call_type is required (e.g. REGULAR_P1, REGULAR_P2, LONER_P1, LONER_P2)")
     if simulation_request.quantity is not None and simulation_request.quantity <= 0:
         raise ValueError(f"quantity must be a positive integer, got {simulation_request.quantity}")
     if simulation_request.quantity is not None and simulation_request.quantity > MAX_SIMULATION_QUANTITY:
@@ -108,6 +110,8 @@ def validate_simulation_request(simulation_request: RoundSimulationRequest):
 
 
 def validate_simulation(simulation: RoundSimulation):
+    call = simulation.call
+
     # Check for duplicate cards across all player hands
     all_cards = []
     for player in simulation.players:
@@ -120,27 +124,27 @@ def validate_simulation(simulation: RoundSimulation):
     if simulation.flipped_card is not None:
         holders = [p for p in simulation.players
                    if simulation.flipped_card in p.hand.remaining_cards]
-        if holders and simulation.call is not None:
-            if simulation.call.type.is_phase_2():
+        if holders:
+            if call.type.is_phase_2():
                 # P2: card was turned down — nobody should have it
                 raise ValueError(
                     f"Flipped card '{simulation.flipped_card}' is already in a player's hand")
-            if (simulation.call.type.is_phase_1()
+            if (call.type.is_phase_1()
                     and simulation.dealer_id != 0
                     and holders[0].id != simulation.dealer_id):
                 # P1 with known dealer: only the dealer picks it up
                 raise ValueError(
                     f"Flipped card '{simulation.flipped_card}' is in a non-dealer player's hand")
 
-    # For P1 calls, the call suit must match the flipped card's suit
-    if (simulation.call is not None
+    # For P1 calls with both suit and flipped card specified, they must match
+    if (call.suit is not None
             and simulation.flipped_card is not None
-            and simulation.call.type in (CallTypeEnum.REGULAR_P1, CallTypeEnum.LONER_P1)
-            and simulation.call.suit != simulation.flipped_card.suit):
+            and call.type.is_phase_1()
+            and call.suit != simulation.flipped_card.suit):
         raise ValueError(
             f"For phase 1 calls, the call suit must match the flipped card's suit "
             f"('{simulation.flipped_card.suit.name.name.lower()}'), "
-            f"got '{simulation.call.suit.name.name.lower()}'"
+            f"got '{call.suit.name.name.lower()}'"
         )
 
 
@@ -251,17 +255,13 @@ def get_players_from_sim(simulation_request: RoundSimulationRequest) -> List[Pla
 
 def get_call_from_sim(simulation_request: RoundSimulationRequest, player_name_map: Dict[str, Player]) -> Call:
     suit = get_suit_by_name(simulation_request.call_suit)
+    caller_id = get_id_or_default(simulation_request.caller_name, player_name_map, 0)
     call_type_str = simulation_request.call_type
-    if not call_type_str:
-        call_type = CallTypeEnum.REGULAR_P1
-    else:
-        call_type = CallTypeEnum.create(call_type_str)
-    if suit is None:
-        return None
+    call_type = CallTypeEnum.create(call_type_str)
     return Call(
         suit=suit,
         type=call_type,
-        player_id=get_id_or_default(simulation_request.caller_name, player_name_map, 0)
+        player_id=caller_id,
     )
 
 

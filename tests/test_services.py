@@ -169,7 +169,6 @@ class TestBuildRoundCall(unittest.TestCase):
             result = CallService.build_round_call(base, self.PLAYER_IDS)
             self.assertEqual(result.type, call_type)
 
-
 class TestTrickResolution(unittest.TestCase):
     """Direct tests for TrickService.update_play_results()."""
 

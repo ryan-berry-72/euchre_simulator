@@ -213,6 +213,59 @@ class TestPassingPlayers(unittest.TestCase):
             self.assertIn(3, by_player, f"Round {rd.id}: player 3 didn't play")
 
 
+class TestRandomFlippedCard(unittest.TestCase):
+    """When no flipped card is specified, each round must get a fresh random one."""
+
+    def test_flipped_card_varies_across_rounds(self):
+        """With no fixed flipped card, rounds should not all share the same one."""
+        svc = make_simulation_service()
+        players = make_players()
+        players[0].hand.remaining_cards = [
+            euchre_deck_map["ace_of_spades"],
+            euchre_deck_map["ace_of_hearts"],
+            euchre_deck_map["ace_of_clubs"],
+            euchre_deck_map["ace_of_diamonds"],
+            euchre_deck_map["nine_of_spades"],
+        ]
+        sim = svc.simulate(RoundSimulation(
+            players=players,
+            call=Call(suit=spades, type=CallTypeEnum.REGULAR_P1, player_id=1),
+            rounds=[],
+            flipped_card=None,
+            quantity=100,
+            dealer_id=1,
+            keep_rounds=True,
+        ))
+        flipped_cards = {rd.flipped_card for rd in sim.rounds}
+        self.assertGreater(len(flipped_cards), 1,
+                           "All 100 rounds got the same flipped card — should be re-randomized")
+
+    def test_nine_suit_does_not_skew_results(self):
+        """Changing the 9's suit in a 4-ace hand should produce similar win rates."""
+        nines = ["nine_of_spades", "nine_of_hearts", "nine_of_clubs", "nine_of_diamonds"]
+        aces = ["ace_of_spades", "ace_of_hearts", "ace_of_clubs", "ace_of_diamonds"]
+        win_rates = []
+        for nine in nines:
+            svc = make_simulation_service()
+            players = make_players()
+            players[0].hand.remaining_cards = [euchre_deck_map[a] for a in aces] + [euchre_deck_map[nine]]
+            random.seed(42)
+            sim = svc.simulate(RoundSimulation(
+                players=players,
+                call=Call(suit=None, type=CallTypeEnum.REGULAR_P1, player_id=1),
+                rounds=[],
+                flipped_card=None,
+                quantity=2000,
+                dealer_id=1,
+            ))
+            total = sim.quantity
+            caller_team_wins = sim.total_wins[SuitColorEnum.BLACK]
+            win_rates.append(caller_team_wins / total)
+        # all four win rates should be within 10% of each other
+        self.assertAlmostEqual(min(win_rates), max(win_rates), delta=0.10,
+                               msg=f"Win rates vary too much by 9's suit: {win_rates}")
+
+
 class TestGame(unittest.TestCase):
     """Integration tests for a full game via GameService."""
 

@@ -415,6 +415,94 @@ class TestPassingPlayerValidation(unittest.TestCase):
         self.assertIn("does not match any player", resp.get_json()["error"])
 
 
+class TestFourAcesWithDifferentNine(unittest.TestCase):
+    """Changing the 9's suit in a 4-ace hand must not produce wildly different results."""
+
+    ACES = ["ace_of_spades", "ace_of_hearts", "ace_of_clubs", "ace_of_diamonds"]
+
+    def setUp(self):
+        self.client = app.test_client()
+
+    def _run_hand(self, nine):
+        payload = {
+            "player_names": ["Alice", "Bob", "Carol", "Dave"],
+            "player_hands": [
+                self.ACES + [nine],
+                [], [], [],
+            ],
+            "dealer_name": "",
+            "flipped_card": "",
+            "caller_name": "Alice",
+            "call_suit": "",
+            "call_type": "REGULAR_P1",
+            "quantity": 1000,
+        }
+        return self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+    def test_four_aces_nine_of_spades(self):
+        resp = self._run_hand("nine_of_spades")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_four_aces_nine_of_hearts(self):
+        resp = self._run_hand("nine_of_hearts")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_four_aces_nine_of_clubs(self):
+        resp = self._run_hand("nine_of_clubs")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_four_aces_nine_of_diamonds(self):
+        resp = self._run_hand("nine_of_diamonds")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_win_rates_are_consistent_across_nines(self):
+        """All four 9 suits should produce similar win rates for the caller's team."""
+        nines = ["nine_of_spades", "nine_of_hearts", "nine_of_clubs", "nine_of_diamonds"]
+        win_probs = []
+        for nine in nines:
+            resp = self._run_hand(nine)
+            data = resp.get_json()
+            # Alice & Carol are the BLACK team (players 1 & 3)
+            team_name = "Alice & Carol"
+            win_probs.append(data["win_prob_map"][team_name])
+        spread = max(win_probs) - min(win_probs)
+        self.assertLess(spread, 0.10,
+                        f"Win rates vary too much by 9's suit: {dict(zip(nines, win_probs))}")
+
+
+class TestPartialCallDefaults(unittest.TestCase):
+    """Missing optional call fields should be randomized; required ones must be present."""
+
+    def setUp(self):
+        self.client = app.test_client()
+
+    def test_caller_name_without_suit_returns_200(self):
+        payload = valid_payload()
+        payload["call_suit"] = ""
+        payload["caller_name"] = "Bob"
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_missing_call_type_rejected(self):
+        payload = valid_payload()
+        payload["call_type"] = ""
+        resp = self.client.post(
+            "/euchre/simulate/round",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("call_type is required", resp.get_json()["error"])
+
+
 class TestShorthandCardNotation(unittest.TestCase):
 
     def setUp(self):
