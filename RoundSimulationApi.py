@@ -95,7 +95,7 @@ def to_simulation_request(json_data: Dict) -> RoundSimulationRequest:
         caller_name=json_data.get('caller_name', ''),
         call_suit=json_data.get('call_suit', ''),
         call_type=json_data.get('call_type', ''),
-        quantity=json_data.get('quantity', ''),
+        quantity=json_data.get('quantity'),
         passing_player_names=json_data.get('passing_player_names', [])
     )
 
